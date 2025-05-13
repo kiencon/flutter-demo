@@ -51,7 +51,7 @@ class _MyHomePageState extends State<MyHomePage> {
             Text('You have pushed the button this many times:',
             style: TextStyle(fontSize: myFontSize),),
             Text(
-              'Count: $myFontSize',
+              '$myFontSize',
               style: TextStyle(fontSize: myFontSize),
             ),
             Slider(
