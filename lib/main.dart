@@ -69,7 +69,7 @@ class _MyHomePageState extends State<MyHomePage> {
               onPressed: () {
                 setState(() {
                   if (_password == 'QWERTY123') {
-                    _imagePath = 'assets/images/ide.png';
+                    _imagePath = 'assets/images/idea.png';
                   } else if (_password == '') {
                     _imagePath = 'assets/images/question.png';
                   } else {
