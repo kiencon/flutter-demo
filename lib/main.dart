@@ -28,14 +28,9 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  double _counter = 0.0;
-  double myFontSize = 30.0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter += 1.0;
-    });
-  }
+  String _username = '';
+  String _password = '';
+  String _imagePath = 'assets/images/idea.png';
 
   @override
   Widget build(BuildContext context) {
@@ -48,29 +43,50 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            Text('You have pushed the button this many times:',
-            style: TextStyle(fontSize: myFontSize),),
-            Text(
-              '$myFontSize',
-              style: TextStyle(fontSize: myFontSize),
+            TextField(decoration: const InputDecoration(
+              labelText: 'Login',
+              border: OutlineInputBorder(),
             ),
-            Slider(
-              value: myFontSize,
-              min: 0,
-              max: 100,
-              onChanged: (double newValue) {
+              onChanged: (value) {
                 setState(() {
-                  myFontSize = newValue;
+                  _username = value;
                 });
               },
-            )
+            ),
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Password',
+                border: OutlineInputBorder(),
+              ),
+              obscureText: true,
+              onChanged: (value) {
+                setState(() {
+                  _password = value;
+                });
+              },
+            ),
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  if (_password == 'QWERTY123') {
+                    _imagePath = 'assets/images/idea.png';
+                  } else if (_password == '') {
+                    _imagePath = 'assets/images/question.png';
+                  } else {
+                    _imagePath = 'assets/images/stop.png';
+                  }
+                });
+              },
+              child: const Text('Login'),
+            ),
+            Image.asset(
+              _imagePath,
+              width: 300,
+              height: 300,
+              fit: BoxFit.cover,
+            ),
           ],
         ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }
