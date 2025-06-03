@@ -1,3 +1,4 @@
+import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
 import 'package:flutter/material.dart';
 
 void main() {
@@ -28,9 +29,48 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  String _username = '';
-  String _password = '';
   String _imagePath = 'assets/images/idea.png';
+
+  final TextEditingController _usernameController = TextEditingController(text: '');
+  final TextEditingController _passwordController = TextEditingController(text: '');
+
+  Future<void> saveData(String key, String value) async {
+    final encryptedPrefs = EncryptedSharedPreferences();
+    await encryptedPrefs.setString(key, value);
+  }
+
+  Future<String> getData(String key) async {
+    final encryptedPrefs = EncryptedSharedPreferences();
+    return encryptedPrefs.getString(key);
+  }
+
+  Future<void> removeData(String key) async {
+    final encryptedPrefs = EncryptedSharedPreferences();
+    encryptedPrefs.remove(key);
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCredentials();
+  }
+
+  void _loadCredentials() async {
+    String username = await getData('username');
+    String password = await getData('password');
+    setState(() {
+      _usernameController.text = username;
+      _passwordController.text = password;
+    });
+    if (_usernameController.text != '' || _passwordController.text != '') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Username and password load from EncryptedSharedPreferences'),
+          //duration: Duration(seconds: 2),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -43,39 +83,63 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            TextField(decoration: const InputDecoration(
-              labelText: 'Login',
-              border: OutlineInputBorder(),
-            ),
-              onChanged: (value) {
-                setState(() {
-                  _username = value;
-                });
-              },
+            TextField(
+              controller: _usernameController,
+              decoration: const InputDecoration(
+                labelText: 'Login',
+                border: OutlineInputBorder(),
+              )
             ),
             TextField(
+              controller: _passwordController,
+              obscureText: true,
               decoration: const InputDecoration(
                 labelText: 'Password',
                 border: OutlineInputBorder(),
-              ),
-              obscureText: true,
-              onChanged: (value) {
-                setState(() {
-                  _password = value;
-                });
-              },
+              )
             ),
             ElevatedButton(
               onPressed: () {
                 setState(() {
-                  if (_password == 'QWERTY123') {
+                  if (_passwordController.text == 'QWERTY123') {
                     _imagePath = 'assets/images/idea.png';
-                  } else if (_password == '') {
+                  } else if (_passwordController.text == '') {
                     _imagePath = 'assets/images/question.png';
                   } else {
                     _imagePath = 'assets/images/stop.png';
                   }
                 });
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) {
+                    return AlertDialog(
+                      title: Text('Notification'),
+                      content: Text('Would like to save your username and password?'),
+                      actions: [
+                        ElevatedButton(
+                          onPressed: () async {
+                            await saveData('username', _usernameController.text);
+                            await saveData('password', _passwordController.text);
+
+                            if (!context.mounted) return;
+                            Navigator.of(context).pop();
+                          },
+                          child: Text('Yes'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () async {
+                            await removeData('username');
+                            await removeData('password');
+
+                            if (!context.mounted) return;
+                            Navigator.of(context).pop();
+                          },
+                          child: Text('No'),
+                        ),
+                      ],
+                    );
+                  },
+                );
               },
               child: const Text('Login'),
             ),
