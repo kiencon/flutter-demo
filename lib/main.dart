@@ -1,5 +1,6 @@
-import 'package:encrypted_shared_preferences/encrypted_shared_preferences.dart';
 import 'package:flutter/material.dart';
+import 'package:hello_world/data_repository.dart';
+import 'package:hello_world/profile.dart';
 
 void main() {
   runApp(const MyApp());
@@ -16,6 +17,10 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      routes: {
+        //'/': (context) => const MyApp(),
+        '/profile': (context) => ProfilePage(),
+      },
     );
   }
 }
@@ -34,24 +39,10 @@ class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _usernameController = TextEditingController(
     text: '',
   );
+
   final TextEditingController _passwordController = TextEditingController(
     text: '',
   );
-
-  Future<void> saveData(String key, String value) async {
-    final encryptedPrefs = EncryptedSharedPreferences();
-    await encryptedPrefs.setString(key, value);
-  }
-
-  Future<String> getData(String key) async {
-    final encryptedPrefs = EncryptedSharedPreferences();
-    return encryptedPrefs.getString(key);
-  }
-
-  Future<void> removeData(String key) async {
-    final encryptedPrefs = EncryptedSharedPreferences();
-    encryptedPrefs.remove(key);
-  }
 
   @override
   void initState() {
@@ -67,8 +58,8 @@ class _MyHomePageState extends State<MyHomePage> {
   }
 
   void _loadCredentials() async {
-    String username = await getData('username');
-    String password = await getData('password');
+    String username = await DataRepository.getData('username');
+    String password = await DataRepository.getData('password');
 
     if (!mounted) return;
 
@@ -82,10 +73,61 @@ class _MyHomePageState extends State<MyHomePage> {
           content: Text(
             'Username and password load from EncryptedSharedPreferences',
           ),
-          //duration: Duration(seconds: 2),
         ),
       );
     }
+  }
+
+  void _handleLogin() {
+    setState(() {
+      if (_passwordController.text == 'QWERTY123') {
+        _imagePath = 'assets/images/idea.png';
+        DataRepository.loginName = _usernameController.text;
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Notification'),
+              content: Text('Would like to save your username and password?'),
+              actions: [
+                ElevatedButton(
+                  onPressed: () async {
+                    await DataRepository.saveData(
+                      'username',
+                      _usernameController.text,
+                    );
+                    await DataRepository.saveData(
+                      'password',
+                      _passwordController.text,
+                    );
+
+                    if (!context.mounted) return;
+                    Navigator.of(context).pop();
+                    Navigator.pushNamed(context, '/profile');
+                  },
+                  child: Text('Yes'),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    await DataRepository.removeData('username');
+                    await DataRepository.removeData('password');
+
+                    if (!context.mounted) return;
+                    Navigator.of(context).pop();
+                    Navigator.pushNamed(context, '/profile');
+                  },
+                  child: Text('No'),
+                ),
+              ],
+            );
+          },
+        );
+      } else if (_passwordController.text == '') {
+        _imagePath = 'assets/images/question.png';
+      } else {
+        _imagePath = 'assets/images/stop.png';
+      }
+    });
   }
 
   @override
@@ -99,74 +141,28 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            TextField(
-              controller: _usernameController,
-              decoration: const InputDecoration(
-                labelText: 'Login',
-                border: OutlineInputBorder(),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: _usernameController,
+                decoration: const InputDecoration(
+                  labelText: 'Login',
+                  border: OutlineInputBorder(),
+                ),
               ),
             ),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Password',
-                border: OutlineInputBorder(),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: const InputDecoration(
+                  labelText: 'Password',
+                  border: OutlineInputBorder(),
+                ),
               ),
             ),
-            ElevatedButton(
-              onPressed: () {
-                setState(() {
-                  if (_passwordController.text == 'QWERTY123') {
-                    _imagePath = 'assets/images/idea.png';
-                  } else if (_passwordController.text == '') {
-                    _imagePath = 'assets/images/question.png';
-                  } else {
-                    _imagePath = 'assets/images/stop.png';
-                  }
-                });
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) {
-                    return AlertDialog(
-                      title: Text('Notification'),
-                      content: Text(
-                        'Would like to save your username and password?',
-                      ),
-                      actions: [
-                        ElevatedButton(
-                          onPressed: () async {
-                            await saveData(
-                              'username',
-                              _usernameController.text,
-                            );
-                            await saveData(
-                              'password',
-                              _passwordController.text,
-                            );
-
-                            if (!context.mounted) return;
-                            Navigator.of(context).pop();
-                          },
-                          child: Text('Yes'),
-                        ),
-                        ElevatedButton(
-                          onPressed: () async {
-                            await removeData('username');
-                            await removeData('password');
-
-                            if (!context.mounted) return;
-                            Navigator.of(context).pop();
-                          },
-                          child: Text('No'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              },
-              child: const Text('Login'),
-            ),
+            ElevatedButton(onPressed: _handleLogin, child: const Text('Login')),
             Image.asset(_imagePath, width: 300, height: 300, fit: BoxFit.cover),
           ],
         ),
