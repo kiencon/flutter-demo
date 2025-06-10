@@ -33,8 +33,6 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   _loadProfileData() async {
-    print("-----LOG-----");
-    print("-----LOG--firstName---${await DataRepository.getData('firstName')}");
     await DataRepository.loadProfileData();
     _firstNameController.text = DataRepository.firstName;
     _lastNameController.text = DataRepository.lastName;
