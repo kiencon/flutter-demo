@@ -31,8 +31,12 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   String _imagePath = 'assets/images/idea.png';
 
-  final TextEditingController _usernameController = TextEditingController(text: '');
-  final TextEditingController _passwordController = TextEditingController(text: '');
+  final TextEditingController _usernameController = TextEditingController(
+    text: '',
+  );
+  final TextEditingController _passwordController = TextEditingController(
+    text: '',
+  );
 
   Future<void> saveData(String key, String value) async {
     final encryptedPrefs = EncryptedSharedPreferences();
@@ -55,9 +59,19 @@ class _MyHomePageState extends State<MyHomePage> {
     _loadCredentials();
   }
 
+  @override
+  void dispose() {
+    _usernameController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   void _loadCredentials() async {
     String username = await getData('username');
     String password = await getData('password');
+
+    if (!mounted) return;
+
     setState(() {
       _usernameController.text = username;
       _passwordController.text = password;
@@ -65,7 +79,9 @@ class _MyHomePageState extends State<MyHomePage> {
     if (_usernameController.text != '' || _passwordController.text != '') {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Username and password load from EncryptedSharedPreferences'),
+          content: Text(
+            'Username and password load from EncryptedSharedPreferences',
+          ),
           //duration: Duration(seconds: 2),
         ),
       );
@@ -88,7 +104,7 @@ class _MyHomePageState extends State<MyHomePage> {
               decoration: const InputDecoration(
                 labelText: 'Login',
                 border: OutlineInputBorder(),
-              )
+              ),
             ),
             TextField(
               controller: _passwordController,
@@ -96,7 +112,7 @@ class _MyHomePageState extends State<MyHomePage> {
               decoration: const InputDecoration(
                 labelText: 'Password',
                 border: OutlineInputBorder(),
-              )
+              ),
             ),
             ElevatedButton(
               onPressed: () {
@@ -114,12 +130,20 @@ class _MyHomePageState extends State<MyHomePage> {
                   builder: (BuildContext context) {
                     return AlertDialog(
                       title: Text('Notification'),
-                      content: Text('Would like to save your username and password?'),
+                      content: Text(
+                        'Would like to save your username and password?',
+                      ),
                       actions: [
                         ElevatedButton(
                           onPressed: () async {
-                            await saveData('username', _usernameController.text);
-                            await saveData('password', _passwordController.text);
+                            await saveData(
+                              'username',
+                              _usernameController.text,
+                            );
+                            await saveData(
+                              'password',
+                              _passwordController.text,
+                            );
 
                             if (!context.mounted) return;
                             Navigator.of(context).pop();
@@ -143,12 +167,7 @@ class _MyHomePageState extends State<MyHomePage> {
               },
               child: const Text('Login'),
             ),
-            Image.asset(
-              _imagePath,
-              width: 300,
-              height: 300,
-              fit: BoxFit.cover,
-            ),
+            Image.asset(_imagePath, width: 300, height: 300, fit: BoxFit.cover),
           ],
         ),
       ),
