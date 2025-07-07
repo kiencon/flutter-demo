@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:hello_world/data_repository.dart';
-import 'package:hello_world/profile.dart';
 
 void main() {
   runApp(const MyApp());
@@ -18,8 +16,7 @@ class MyApp extends StatelessWidget {
       ),
       home: const MyHomePage(title: 'Flutter Demo Home Page'),
       routes: {
-        //'/': (context) => const MyApp(),
-        '/profile': (context) => ProfilePage(),
+        //'/profile': (context) => ProfilePage(),
       },
     );
   }
@@ -33,101 +30,98 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
+class Item {
+  static int count = 0;
+  //properties
+  final String name;
+  final int quantity;
+  int id = 0;
+
+  Item(this.name, this.quantity) {
+    id = Item.count++;
+  }
+}
+
 class _MyHomePageState extends State<MyHomePage> {
-  String _imagePath = 'assets/images/idea.png';
+  final TextEditingController _itemController = TextEditingController(text: '');
 
-  final TextEditingController _usernameController = TextEditingController(
+  final TextEditingController _quantityController = TextEditingController(
     text: '',
   );
 
-  final TextEditingController _passwordController = TextEditingController(
-    text: '',
-  );
+  final List<Item> _listItem = [];
+
+  int count = 1;
 
   @override
   void initState() {
     super.initState();
-    _loadCredentials();
   }
 
   @override
   void dispose() {
-    _usernameController.dispose();
-    _passwordController.dispose();
+    _itemController.dispose();
+    _quantityController.dispose();
     super.dispose();
   }
 
-  void _loadCredentials() async {
-    String username = await DataRepository.getData('username');
-    String password = await DataRepository.getData('password');
-
-    if (!mounted) return;
-
+  _handleAddingItem() {
     setState(() {
-      _usernameController.text = username;
-      _passwordController.text = password;
+      _listItem.add(
+        Item(_itemController.text, int.parse(_quantityController.text)),
+      );
     });
-    if (_usernameController.text != '' || _passwordController.text != '') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Username and password load from EncryptedSharedPreferences',
+    _itemController.clear();
+    _quantityController.clear();
+  }
+
+  _handleRemoveItem(int id) {
+    setState(() {
+      _listItem.removeWhere((item) => id == item.id);
+    });
+  }
+
+  List<Widget> generateList() {
+    return _listItem.asMap().entries.map((entry) {
+      int index = entry.key;
+      Item value = entry.value;
+      return GestureDetector(
+        onLongPress: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                      onPressed: () => _handleRemoveItem(value.id),
+                      child: const Text('Yes'),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                      child: const Text('No'),
+                      onPressed: () => {},
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+          // You can show a dialog, delete an item, etc.
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Center(
+            child: Text(
+              '${index + 1} ${value.name} quantity: ${value.quantity}',
+            ),
           ),
         ),
       );
-    }
-  }
-
-  void _handleLogin() {
-    setState(() {
-      if (_passwordController.text == 'QWERTY123') {
-        _imagePath = 'assets/images/idea.png';
-        DataRepository.loginName = _usernameController.text;
-        showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: Text('Notification'),
-              content: Text('Would like to save your username and password?'),
-              actions: [
-                ElevatedButton(
-                  onPressed: () async {
-                    await DataRepository.saveData(
-                      'username',
-                      _usernameController.text,
-                    );
-                    await DataRepository.saveData(
-                      'password',
-                      _passwordController.text,
-                    );
-
-                    if (!context.mounted) return;
-                    Navigator.of(context).pop();
-                    Navigator.pushNamed(context, '/profile');
-                  },
-                  child: Text('Yes'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    await DataRepository.removeData('username');
-                    await DataRepository.removeData('password');
-
-                    if (!context.mounted) return;
-                    Navigator.of(context).pop();
-                    Navigator.pushNamed(context, '/profile');
-                  },
-                  child: Text('No'),
-                ),
-              ],
-            );
-          },
-        );
-      } else if (_passwordController.text == '') {
-        _imagePath = 'assets/images/question.png';
-      } else {
-        _imagePath = 'assets/images/stop.png';
-      }
-    });
+    }).toList();
   }
 
   @override
@@ -139,14 +133,14 @@ class _MyHomePageState extends State<MyHomePage> {
       ),
       body: Center(
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(
-                controller: _usernameController,
+                controller: _itemController,
                 decoration: const InputDecoration(
-                  labelText: 'Login',
+                  labelText: 'type the item here',
                   border: OutlineInputBorder(),
                 ),
               ),
@@ -154,16 +148,18 @@ class _MyHomePageState extends State<MyHomePage> {
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: TextField(
-                controller: _passwordController,
-                obscureText: true,
+                controller: _quantityController,
                 decoration: const InputDecoration(
-                  labelText: 'Password',
+                  labelText: 'type the quantity here',
                   border: OutlineInputBorder(),
                 ),
               ),
             ),
-            ElevatedButton(onPressed: _handleLogin, child: const Text('Login')),
-            Image.asset(_imagePath, width: 300, height: 300, fit: BoxFit.cover),
+            ElevatedButton(
+              onPressed: _handleAddingItem,
+              child: const Text('Click here'),
+            ),
+            Expanded(child: ListView(children: generateList())),
           ],
         ),
       ),
