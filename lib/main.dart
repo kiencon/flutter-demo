@@ -14,7 +14,10 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
       ),
-      home: const MyHomePage(title: 'Lab 3'),
+      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      routes: {
+        //'/profile': (context) => ProfilePage(),
+      },
     );
   }
 }
@@ -27,102 +30,98 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-List<(String title, String img)> getMeatInformation() {
-  return [
-    ('BEEF', 'images/beef.jpg'),
-    ('CHICKEN', 'images/chicken.jpg'),
-    ('PORK', 'images/pork.jpg'),
-    ('SEAFOOD', 'images/seafood.jpg'),
-  ];
-}
+class Item {
+  static int count = 0;
+  //properties
+  final String name;
+  final int quantity;
+  int id = 0;
 
-List<(String, String)> getCourseInformation() {
-  return [
-    ('Main Dishes', 'images/main-dishes.jpg'),
-    ('Salad Recipes', 'images/salad.jpg'),
-    ('Side Dishes', 'images/side-dishes.jpg'),
-    ('Crockpot', 'images/crockpot.jpg'),
-  ];
-}
-
-List<(String, String)> getDessertInformation() {
-  return [
-    ('Ice Cream', 'images/icecream.jpg'),
-    ('Brownies', 'images/brownies.jpg'),
-    ('Pies', 'images/pie.jpg'),
-    ('Cookies', 'images/cookie.jpg'),
-  ];
+  Item(this.name, this.quantity) {
+    id = Item.count++;
+  }
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  List<Widget> generateMeat() {
-    var heading = 'BY MEAT';
-    List<(String, String)> meatInformation = getMeatInformation();
-    List<Stack> stacks =
-        meatInformation
-            .map(
-              (data) => Stack(
-                alignment: AlignmentDirectional.center,
+  final TextEditingController _itemController = TextEditingController(text: '');
+
+  final TextEditingController _quantityController = TextEditingController(
+    text: '',
+  );
+
+  final List<Item> _listItem = [];
+
+  int count = 1;
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _itemController.dispose();
+    _quantityController.dispose();
+    super.dispose();
+  }
+
+  _handleAddingItem() {
+    setState(() {
+      _listItem.add(
+        Item(_itemController.text, int.parse(_quantityController.text)),
+      );
+    });
+    _itemController.clear();
+    _quantityController.clear();
+  }
+
+  _handleRemoveItem(int id) {
+    setState(() {
+      _listItem.removeWhere((item) => id == item.id);
+    });
+  }
+
+  List<Widget> generateList() {
+    return _listItem.asMap().entries.map((entry) {
+      int index = entry.key;
+      Item value = entry.value;
+      return GestureDetector(
+        onLongPress: () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircleAvatar(
-                    backgroundImage: AssetImage(data.$2),
-                    radius: 40,
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                      onPressed: () => _handleRemoveItem(value.id),
+                      child: const Text('Yes'),
+                    ),
                   ),
-                  Text(
-                    data.$1,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                      child: const Text('No'),
+                      onPressed: () => {},
                     ),
                   ),
                 ],
               ),
-            )
-            .toList();
-
-    return [
-      Padding(
-        padding: const EdgeInsets.only(bottom: 16.0),
-        child: Text(
-          heading,
-          style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700),
+            ),
+          );
+          // You can show a dialog, delete an item, etc.
+        },
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Center(
+            child: Text(
+              '${index + 1} ${value.name} quantity: ${value.quantity}',
+            ),
+          ),
         ),
-      ),
-      Row(mainAxisAlignment: MainAxisAlignment.spaceAround, children: stacks),
-    ];
-  }
-
-  List<Widget> generateFood(
-    String heading,
-    List<(String, String)> informations,
-  ) {
-    List<Column> foodDetails =
-        informations
-            .map(
-              (data) => Column(
-                children: [
-                  CircleAvatar(
-                    backgroundImage: AssetImage(data.$2),
-                    radius: 40,
-                  ),
-                  Text(data.$1),
-                ],
-              ),
-            )
-            .toList();
-    return [
-      Padding(
-        padding: const EdgeInsets.only(bottom: 16.0),
-        child: Text(
-          heading,
-          style: TextStyle(fontSize: 25, fontWeight: FontWeight.w700),
-        ),
-      ),
-      Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: foodDetails,
-      ),
-    ];
+      );
+    }).toList();
   }
 
   @override
@@ -136,33 +135,31 @@ class _MyHomePageState extends State<MyHomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
-            Text(
-              'BROWSE CATEGORIES',
-              style: TextStyle(fontSize: 30, fontWeight: FontWeight.w700),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: TextField(
+                controller: _itemController,
+                decoration: const InputDecoration(
+                  labelText: 'type the item here',
+                  border: OutlineInputBorder(),
+                ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.all(8.0),
-              child: Text(
-                "Not sure about exactly which recipe you're looking for? Do a search, or dive into our most popular categories",
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              child: TextField(
+                controller: _quantityController,
+                decoration: const InputDecoration(
+                  labelText: 'type the quantity here',
+                  border: OutlineInputBorder(),
+                ),
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 16.0),
-              child: Column(children: generateMeat()),
+            ElevatedButton(
+              onPressed: _handleAddingItem,
+              child: const Text('Click here'),
             ),
-            Padding(
-              padding: const EdgeInsets.only(top: 16.0),
-              child: Column(
-                children: generateFood('BY COURSE', getCourseInformation()),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.only(top: 16.0),
-              child: Column(
-                children: generateFood('BY DESSERT', getDessertInformation()),
-              ),
-            ),
+            Expanded(child: ListView(children: generateList())),
           ],
         ),
       ),
