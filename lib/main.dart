@@ -1,4 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:hello_world/dao/todoDAO.dart';
+
+import 'database.dart';
+import 'entity/todo.dart';
 
 void main() {
   runApp(const MyApp());
@@ -30,18 +36,6 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-class Item {
-  static int count = 0;
-  //properties
-  final String name;
-  final int quantity;
-  int id = 0;
-
-  Item(this.name, this.quantity) {
-    id = Item.count++;
-  }
-}
-
 class _MyHomePageState extends State<MyHomePage> {
   final TextEditingController _itemController = TextEditingController(text: '');
 
@@ -49,13 +43,32 @@ class _MyHomePageState extends State<MyHomePage> {
     text: '',
   );
 
-  final List<Item> _listItem = [];
+  AppDatabase? database = null;
 
-  int count = 1;
+  Future<void> initDB() async {
+    if (database == null) {
+      database = await $FloorAppDatabase.databaseBuilder('app_database.db').build();
+    }
+  }
+
+  List<Todo> _listItem = [];
+
+  int count = 100;
 
   @override
   void initState() {
     super.initState();
+    initTodoList();
+  }
+
+  Future<void> initTodoList() async {
+    await initDB();
+    var items = await database?.todoDAO.findAllTodo();
+    print("debug=====");
+    print(items);
+    setState(() {
+      _listItem = items!;
+    });
   }
 
   @override
@@ -65,26 +78,36 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
-  _handleAddingItem() {
+  Future<void> _handleAddingItem() async {
+    await initDB();
+    var item = Todo(
+        null,
+        _itemController.text,
+        int.parse(_quantityController.text)
+    );
+    await database?.todoDAO.insertPerson(item);
     setState(() {
       _listItem.add(
-        Item(_itemController.text, int.parse(_quantityController.text)),
+        item,
       );
     });
     _itemController.clear();
     _quantityController.clear();
   }
 
-  _handleRemoveItem(int id) {
+  Future<void> _handleRemoveItem(int id) async {
+    var item = _listItem.firstWhere((item) => id == item.id);
+    print("item ${item.id} ${item.name}");
+    await database?.todoDAO.deletePerson(item);
     setState(() {
-      _listItem.removeWhere((item) => id == item.id);
+      initTodoList();
     });
   }
 
   List<Widget> generateList() {
     return _listItem.asMap().entries.map((entry) {
       int index = entry.key;
-      Item value = entry.value;
+      var value = entry.value;
       return GestureDetector(
         onLongPress: () {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -95,7 +118,7 @@ class _MyHomePageState extends State<MyHomePage> {
                   Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: ElevatedButton(
-                      onPressed: () => _handleRemoveItem(value.id),
+                      onPressed: () => _handleRemoveItem(value.id ?? 0),
                       child: const Text('Yes'),
                     ),
                   ),
